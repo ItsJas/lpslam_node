@@ -49,7 +49,10 @@ nice explainer:
 https://www.stereolabs.com/docs/ros2/video/
 */
 
-void outside_lpslam_OnReconstructionCallback(LpSlamGlobalStateInTime const &state_in_time, void *lpslam_object);
+
+namespace lpslam
+{
+    void outside_lpslam_OnReconstructionCallback(LpSlamGlobalStateInTime const &state_in_time, void *lpslam_object);
 
 LpSlamRequestNavDataResult outside_lpslam_RequestNavDataCallback(LpSlamROSTimestamp for_ros_time,
     LpSlamGlobalStateInTime * odometry,
@@ -61,10 +64,10 @@ LpSlamRequestNavTransformation outside_lpslam_RequestNavTransformationCallback(L
     LpSlamNavDataFrame to_frame,
     void * lpslam_node);
 
-class LpSlamNode : public rclcpp::Node
+    class LpSlamNode : public rclcpp::Node
 {
 public:
-    LpSlamNode() : Node("lpslam_node")
+    LpSlamNode(const rclcpp::NodeOptions & options) : Node("lpslam_node", options)
     {
         RCLCPP_INFO(get_logger(), "LpSlam node started");
 
@@ -148,7 +151,7 @@ public:
         
         if (m_consumeLaser) { 
             m_laserScanSubsription = this->create_subscription<sensor_msgs::msg::LaserScan>(
-                laserscan_topic, default_qos,
+                laserscan_topic, laser_qos,
                 std::bind(&LpSlamNode::laserscan_callback, this, std::placeholders::_1));
         }
 
@@ -1086,12 +1089,18 @@ LpSlamRequestNavTransformation outside_lpslam_RequestNavTransformationCallback(L
         from_frame, to_frame);
 }
 
-int main(int argc, char **argv)
-{
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<LpSlamNode>();
-    rclcpp::spin(node);
-    rclcpp::shutdown();
+} // namespace lpslam
 
-    return 0;
-}
+#include "rclcpp_components/register_node_macro.hpp"
+
+RCLCPP_COMPONENTS_REGISTER_NODE(lpslam::LpSlamNode)
+
+// int main(int argc, char **argv)
+// {
+//     rclcpp::init(argc, argv);
+//     auto node = std::make_shared<LpSlamNode>();
+//     rclcpp::spin(node);
+//     rclcpp::shutdown();
+
+//     return 0;
+// }

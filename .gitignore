@@ -1,0 +1,9 @@
+install/*
+
+log/*
+
+build/*
+
+lpslam/*
+
+*.log

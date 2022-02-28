@@ -26,6 +26,9 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(lpslam_interfaces REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+
+
 
 SET(LPSLAM_BUILD_ROS2 ON CACHE BOOL "build with ROS2 support")
 SET(LPSLAM_BUILD_OPENVSLAM ON CACHE BOOL "enable")
@@ -43,17 +46,19 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+set(node_plugins "")
+
 ## Build 
-add_executable(lpslam_node
-  src/LpSlamNode.cpp
+add_library(lpslam_component SHARED
+  src/LpSlamComponent.cpp
 )
 
-target_link_libraries(lpslam_node
+target_link_libraries(lpslam_component
   ${OPENZEN_TARGET_NAME}
   lpslam
 )
 
-ament_target_dependencies(lpslam_node
+ament_target_dependencies(lpslam_component
   rclcpp
   std_msgs
   sensor_msgs
@@ -61,10 +66,18 @@ ament_target_dependencies(lpslam_node
   tf2
   tf2_ros
   tf2_geometry_msgs
-  lpslam_interfaces)
+  lpslam_interfaces
+  rclcpp_components)
 
-install(TARGETS lpslam_node
-  DESTINATION lib/${PROJECT_NAME})
+rclcpp_components_register_nodes(lpslam_component "lpslam::LpSlamNode")
+set(node_plugins "${node_plugins}lpslam::LpSlamNode;$<TARGET_FILE:lpslam_component>\n")
+  
+install( TARGETS
+  lpslam_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)  
 install(TARGETS lpslam
   DESTINATION lib/${PROJECT_NAME})
 
